@@ -6,12 +6,17 @@ import os
 app = Flask(__name__)
 app.secret_key = '\xf5!\x07!qj\xa4\x08\xc6\xf8\n\x8a\x95m\xe2\x04g\xbb\x98|U\xa2f\x03'
 app.jinja_env.undefined = jinja2.StrictUndefined
+#controller function(CF) attached to page
+#model function called(MF) (if any)
+#template for page (TP)
 
+#CF index, MF (none), TP index.html
 @app.route("/")
 def index():
     """This is the 'cover' page of the ubermelon site"""
     return render_template("index.html")
 
+#CF list_melons, MF get_melons, TP all_melons.html
 @app.route("/melons")
 def list_melons():
     """This is the big page showing all the melons ubermelon has to offer"""
@@ -19,6 +24,7 @@ def list_melons():
     return render_template("all_melons.html",
                            melon_list = melons)
 
+#CF show_melon, MF get_melon_by_id, TP melon_details.html
 @app.route("/melon/<int:id>")
 def show_melon(id):
     """This page shows the details of a given melon, as well as giving an
@@ -28,14 +34,25 @@ def show_melon(id):
     return render_template("melon_details.html",
                   display_melon = melon)
 
+#CF shopping_cart, MF (none), TP cart.html
 @app.route("/cart")
 def shopping_cart():
     """TODO: Display the contents of the shopping cart. The shopping cart is a
     list held in the session that contains all the melons to be added. Check
     accompanying screenshots for details."""
-    return render_template("cart.html")
+    # make loop to get the id out of session
+    # then get that melons deets from model.get_melon_by_id
+    cart_contents = []
+    total = 0
+    for k,v in session["cart"].items():
+        melon_object = model.get_melon_by_id(k)
+        cart_contents.append([melon_object,v])
+        total = total + (melon_object.price * v)
+            
+    return render_template("cart.html",cart_contents = cart_contents, total = total)
 
-@app.route("/add_to_cart/<int:id>")
+#CF add_to_cart, MF (none), TP (none)
+@app.route("/add_to_cart/<string:id>")
 def add_to_cart(id):
     """TODO: Finish shopping cart functionality using session variables to hold
     cart list.
@@ -44,21 +61,38 @@ def add_to_cart(id):
     shopping cart page, while displaying the message
     "Successfully added to cart" """
 
-    return "Oops! This needs to be implemented!"
+    if "cart" not in session:
+        session["cart"] = {id:1}
+        flash("Sucessfully added to NEW cart!")
+    else:                                   
+    # if we do have a cart    
+        if id in session["cart"]:
+            session["cart"][id] = session["cart"][id] + 1   
+            # will equal the quantity
+        else:
+            session["cart"][id] = 1
+
+        flash("Successfully added to cart!")
+
+    return redirect("/cart")
 
 
+#CF show_login, MF (none), TP login.html
 @app.route("/login", methods=["GET"])
 def show_login():
     return render_template("login.html")
 
-
+#CF process_login, MF (none), TP (none)
 @app.route("/login", methods=["POST"])
 def process_login():
     """TODO: Receive the user's login credentials located in the 'request.form'
     dictionary, look up the user, and store them in the session."""
-    return "Oops! This needs to be implemented"
+    email = request.form.get("email")
+    password = request.form.get("password")
+    message = model.get_customer_by_email(email, password)
+    return render_template("userpage.html", message = message)
 
-
+#CF checkout, MF (none), TP (none)
 @app.route("/checkout")
 def checkout():
     """TODO: Implement a payment system. For now, just return them to the main

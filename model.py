@@ -19,7 +19,12 @@ class Melon(object):
         return "<Melon: %s, %s, %s>"%(self.id, self.common_name, self.price_str())
 
 class Customer(object):
-    pass
+    """a wrapper object that corresponds to rows in the Customer table."""
+    def __init__(self, email, name, password):    
+      self.email = email
+      self.name = name
+      self.password = password
+
 
 def connect():
     conn = sqlite3.connect("melons.db")
@@ -64,13 +69,37 @@ def get_melon_by_id(id):
 
     row = cursor.fetchone()
     
-    if not row:
-        return None
+    
 
     melon = Melon(row[0], row[1], row[2], row[3], row[4], row[5],
                   row[6], row[7])
     
     return melon
 
-def get_customer_by_email(email):
-    pass
+def get_customer_by_email(email, password):
+    cursor = connect()
+    query = """SELECT email, givenname, password
+               FROM  customers
+               WHERE email =? AND password =?;"""
+
+    cursor.execute(query, (email, password))
+
+    row = cursor.fetchone()
+
+    if not row:
+      # query = """INSERT INTO customers 
+      #             (email, password)
+      #             VALUES (?, ?);"""
+      
+      cursor.execute(query, (email, password))
+      customer_info = """You are a new customer! 
+      We need more information about you. 
+      We haven't made a new form for you yet. 
+      One day. Enjoy these gifs. Melons be with you.
+      """
+    
+    else:
+      customer_info = "YOU HAVE LOGGED IN" 
+      Customer(row[0], row[1], row[2])
+    
+    return customer_info
